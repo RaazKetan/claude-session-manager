@@ -13,8 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Universal, because the runner is Apple Silicon but the zip is what
+      # Intel Macs download through the cask.
       - name: Build
-        run: ./build.sh
+        run: UNIVERSAL=1 ./build.sh
+
+      - name: Verify it is universal
+        run: lipo -archs ClaudeSessions.app/Contents/MacOS/ClaudeSessions | tee /dev/stderr | grep -q x86_64
 
       - name: Package
         run: ditto -c -k --keepParent ClaudeSessions.app ClaudeSessions.app.zip
