@@ -8,7 +8,23 @@ brew install --cask RaazKetan/tap/claude-sessions && open /Applications/ClaudeSe
 
 Works on Intel and Apple Silicon. Needs macOS 13 or newer.
 
-<sub>Prefer to build from source? `brew install RaazKetan/tap/claude-session-manager` (needs `xcode-select --install`). No Homebrew? `curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh`</sub>
+<details>
+<summary>Other ways to install</summary>
+
+Build from source instead of downloading (needs `xcode-select --install`):
+
+```sh
+brew install RaazKetan/tap/claude-session-manager
+open "$(brew --prefix)/opt/claude-session-manager/ClaudeSessions.app"
+```
+
+No Homebrew:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh
+```
+
+</details>
 
 ## What it does
 
