@@ -51,6 +51,10 @@ brew uninstall --cask claude-sessions
 rm -rf ~/Library/"Application Support"/ClaudeSessions ~/Library/LaunchAgents/dev.local.claudesessions.plist
 ```
 
+## How it works
+
+[ARCHITECTURE.md](ARCHITECTURE.md) covers how sessions are found, how resuming and window-switching work, and where the limits are.
+
 ## Building it yourself
 
 ```sh
