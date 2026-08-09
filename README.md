@@ -8,10 +8,10 @@ A macOS menu bar app listing every Claude Code session on your machine. Click on
 
 ```sh
 brew install RaazKetan/tap/claude-session-manager
-open /opt/homebrew/opt/claude-session-manager/ClaudeSessions.app
+open "$(brew --prefix)/opt/claude-session-manager/ClaudeSessions.app"
 ```
 
-Needs the Xcode Command Line Tools (`xcode-select --install`). No Xcode? Use the prebuilt cask instead:
+macOS 13+. Builds on your machine, so there is no Gatekeeper warning — needs the Command Line Tools (`xcode-select --install`). Want a prebuilt download instead?
 
 ```sh
 brew install --cask RaazKetan/tap/claude-sessions && open /Applications/ClaudeSessions.app
