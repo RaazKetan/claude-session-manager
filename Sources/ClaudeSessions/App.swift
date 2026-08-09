@@ -2,8 +2,12 @@ import SwiftUI
 import ServiceManagement
 
 /// Brings an already-running session forward, or starts it in the default terminal.
-func resume(_ s: Session) {
+// ponytail: skipPermissions is opt-in and off by default. It hands the session blanket
+//           tool approval, which is the user's call to make, not an install-time default.
+func resume(_ s: Session, skipPermissions: Bool = false) {
     if focusRunningSession(s) { return }
+
+    let flags = skipPermissions ? " --dangerously-skip-permissions" : ""
 
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
     // Explain the two ways this can fail, instead of leaving a bare "command not found".
@@ -21,7 +25,7 @@ func resume(_ s: Session) {
           read "?Press return to close… "
           exit 1
         fi
-        claude --resume \(s.id)
+        claude --resume \(s.id)\(flags)
 
         """
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.id).command")
@@ -167,6 +171,7 @@ let statusIcon: NSImage = {
 struct SessionList: View {
     @State private var sessions: [Session] = []
     @State private var query = ""
+    @AppStorage("skipPermissions") private var skipPermissions = false
 
     var filtered: [Session] {
         query.isEmpty ? sessions : sessions.filter {
@@ -182,7 +187,7 @@ struct SessionList: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(filtered) { s in
-                        Button { resume(s) } label: {
+                        Button { resume(s, skipPermissions: skipPermissions) } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.label).lineLimit(1).font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(s.exists ? .primary : .tertiary)
@@ -203,6 +208,13 @@ struct SessionList: View {
                 }
             }
             .frame(height: 360)
+
+            Toggle("Skip permission prompts", isOn: $skipPermissions)
+                .toggleStyle(.checkbox)
+                .font(.caption)
+                .foregroundStyle(skipPermissions ? .primary : .secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .help("Resume with --dangerously-skip-permissions, so the session never asks before running a tool")
 
             HStack {
                 Text("\(filtered.count) sessions").font(.caption).foregroundStyle(.secondary)

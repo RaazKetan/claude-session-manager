@@ -74,6 +74,11 @@ window rather than risk showing you the wrong conversation.
 
 Jumping to an existing window works in Terminal and iTerm2. Other terminals get a new window.
 
+**Skipping permission prompts:** there is a checkbox under the list. Tick it and the resume
+command gains `--dangerously-skip-permissions`, so the session runs tools without asking. It is
+off until you turn it on, because it is a change to how much the agent can do unattended and
+that should be your decision rather than something an install picks for you.
+
 ## Starting at login
 
 ```mermaid

@@ -31,6 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/ma
 - Lists every session on your Mac, newest first.
 - Click one to resume it. If it's already open, it jumps to that window instead of starting a second one.
 - Starts automatically when you log in.
+- Optional checkbox to resume with `--dangerously-skip-permissions`, so the session never stops to ask before running a tool. Off unless you turn it on.
 - Sessions whose folder you deleted are greyed out.
 - Reads the logs Claude Code already keeps on your Mac. Nothing is uploaded.
 
