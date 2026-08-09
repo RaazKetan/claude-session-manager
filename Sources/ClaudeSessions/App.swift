@@ -1,5 +1,4 @@
 import SwiftUI
-import WidgetKit
 
 /// Opens the session in whatever app handles .command files — i.e. the user's default terminal.
 func resume(_ s: Session) {
@@ -30,7 +29,6 @@ struct SessionList: View {
         Names.set(draft, for: s.id)
         editing = nil
         sessions = loadSessions()
-        WidgetCenter.shared.reloadAllTimelines()
     }
 
     var body: some View {
@@ -97,22 +95,10 @@ struct SessionList: View {
     }
 }
 
-/// Widgets can't run scripts, so a click there opens claudesessions://resume/<id> and we do the work here.
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    func application(_ application: NSApplication, open urls: [URL]) {
-        let sessions = loadSessions()
-        for url in urls where url.scheme == "claudesessions" {
-            if let s = sessions.first(where: { $0.id == url.lastPathComponent }), s.exists { resume(s) }
-        }
-    }
-}
-
 @main
 struct ClaudeSessionsApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
     init() {
-        // runnable check: `ClaudeSessions --list`
+        // runnable check: `swift run ClaudeSessions --list`
         if CommandLine.arguments.contains("--list") {
             let s = loadSessions()
             s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.id)  \($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }

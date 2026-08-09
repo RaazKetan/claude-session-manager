@@ -7,6 +7,13 @@ A macOS menu bar widget listing every Claude Code session on your machine. Click
 - Reads `~/.claude/projects/*/*.jsonl` — the session log Claude Code already writes. Nothing is sent anywhere.
 - Each row shows the first prompt, the project path, and the date it was created. Sorted by most recent.
 - Clicking runs `claude --resume <id>` in that directory, in your default terminal.
+- Sessions whose folder has since been deleted are greyed out and not clickable.
+
+## Naming sessions
+
+The label is the first usable prompt of the conversation, which is often not what you'd call it. Click the pencil on any row and type your own name. Clear the field to go back to the auto label.
+
+Names live in `~/Library/Application Support/ClaudeSessions/names.json`, keyed by session id — delete that file to reset everything.
 
 ## Install
 
