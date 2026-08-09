@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on a clean Mac
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh
+
+      # A runner has no ~/.claude, so this doubles as the empty-machine test:
+      # the parser must report zero sessions rather than crashing.
+      - name: Parse sessions
+        run: |
+          out=$(./ClaudeSessions.app/Contents/MacOS/ClaudeSessions --list)
+          echo "$out"
+          grep -q "sessions$" <<< "$out"
+
+      - name: Parse a fabricated session
+        run: |
+          dir="$HOME/.claude/projects/-tmp-ci"
+          mkdir -p "$dir"
+          printf '%s\n' '{"type":"user","cwd":"/tmp","sessionId":"ci-test","timestamp":"2026-01-01T00:00:00.000Z","message":{"role":"user","content":"hello from ci"}}' > "$dir/ci.jsonl"
+          out=$(./ClaudeSessions.app/Contents/MacOS/ClaudeSessions --list)
+          echo "$out"
+          grep -q "hello from ci" <<< "$out"
+
+  formula:
+    name: Install from the tap
+    runs-on: macos-latest
+    steps:
+      - name: brew install
+        run: brew install RaazKetan/tap/claude-session-manager
+
+      - name: Installed app runs
+        run: |
+          app="$(brew --prefix)/opt/claude-session-manager/ClaudeSessions.app"
+          "$app/Contents/MacOS/ClaudeSessions" --list

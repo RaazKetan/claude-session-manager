@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Package
+        run: ditto -c -k --keepParent ClaudeSessions.app ClaudeSessions.app.zip
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" ClaudeSessions.app.zip \
+            --title "${GITHUB_REF_NAME}" --generate-notes
+
+      # The tap lives in another repo, so bumping it needs a token this job does not
+      # have. Print both checksums instead — paste them into homebrew-tap.
+      - name: Checksums for the tap
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          tarball=$(curl -sL "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+          zip=$(shasum -a 256 ClaudeSessions.app.zip | cut -d' ' -f1)
+          {
+            echo "## Tap bump for ${GITHUB_REF_NAME}"
+            echo '```ruby'
+            echo "# Formula/claude-session-manager.rb"
+            echo "url \"https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz\""
+            echo "sha256 \"${tarball}\""
+            echo ""
+            echo "# Casks/claude-sessions.rb"
+            echo "version \"${version}\""
+            echo "sha256 \"${zip}\""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
