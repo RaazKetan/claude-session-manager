@@ -60,4 +60,4 @@ swift run ClaudeSessions --list   # prints what it can read, no window
 
 ## License
 
-[MIT](LICENSE). Unofficial, not affiliated with Anthropic.
+[MIT](LICENSE)
