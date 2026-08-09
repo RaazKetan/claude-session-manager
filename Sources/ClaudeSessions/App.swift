@@ -128,45 +128,39 @@ func focusRunningSession(_ s: Session) -> Bool {
 
 // MARK: - UI
 
-/// Menu bar mark: a session window with a prompt inside it.
-// ponytail: drawn in code, no asset catalog. Monoline at a single stroke weight so it
-//           sits with the system icons; template image, so macOS tints it per theme.
+/// Menu bar mark, as a pixel grid — one row per line, `1` is a filled cell.
+private let iconPixels = [
+    "0011111111111100",
+    "0011111111111100",
+    "0011011111101100",
+    "0011011111101100",
+    "1111111111111111",
+    "1111111111111111",
+    "0011111111111100",
+    "0011111111111100",
+    "0001010000101000",
+    "0001010000101000",
+]
+
+// ponytail: 1.5pt cells land on whole device pixels at 2x, so the sprite stays crisp
+//           instead of smearing the way a scaled bitmap would.
 let statusIcon: NSImage = {
-    let stroke: CGFloat = 1.5
+    let cell: CGFloat = 1.5
+    let cols = CGFloat(iconPixels[0].count), rows = CGFloat(iconPixels.count)
 
-    let icon = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
-        NSColor.black.setStroke()
-
-        let window = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2.6, width: 15, height: 12.8),
-                                  xRadius: 2.8, yRadius: 2.8)
-        window.lineWidth = stroke
-        window.stroke()
-
-        let titleBar = NSBezierPath()
-        titleBar.move(to: NSPoint(x: 1.5, y: 12.0))
-        titleBar.line(to: NSPoint(x: 16.5, y: 12.0))
-        titleBar.lineWidth = stroke
-        titleBar.stroke()
-
-        let chevron = NSBezierPath()
-        chevron.move(to: NSPoint(x: 4.8, y: 9.4))
-        chevron.line(to: NSPoint(x: 7.4, y: 7.4))
-        chevron.line(to: NSPoint(x: 4.8, y: 5.4))
-        chevron.lineWidth = stroke
-        chevron.lineCapStyle = .round
-        chevron.lineJoinStyle = .round
-        chevron.stroke()
-
-        let cursor = NSBezierPath()
-        cursor.move(to: NSPoint(x: 9.0, y: 5.4))
-        cursor.line(to: NSPoint(x: 12.6, y: 5.4))
-        cursor.lineWidth = stroke
-        cursor.lineCapStyle = .round
-        cursor.stroke()
-
+    let icon = NSImage(size: NSSize(width: cols * cell, height: rows * cell), flipped: false) { _ in
+        NSColor.black.setFill()   // template images are an alpha mask; macOS supplies the colour
+        for (r, row) in iconPixels.enumerated() {
+            for (c, pixel) in row.enumerated() where pixel == "1" {
+                // Grid runs top-down; the drawing origin is bottom-left.
+                NSRect(x: CGFloat(c) * cell,
+                       y: (rows - 1 - CGFloat(r)) * cell,
+                       width: cell, height: cell).fill()
+            }
+        }
         return true
     }
-    icon.isTemplate = true
+    icon.isTemplate = true   // white on a dark menu bar, black on a light one
     return icon
 }()
 
