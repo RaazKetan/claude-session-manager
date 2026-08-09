@@ -10,6 +10,8 @@ struct Session: Identifiable {
     let created: Date
     let modified: Date
     let exists: Bool
+    /// True when this is the only session in its folder, so a folder match identifies it.
+    var aloneInFolder = false
 
     var label: String { name ?? title }
     var project: String { (cwd as NSString).lastPathComponent }
@@ -111,5 +113,9 @@ func loadSessions() -> [Session] {
                                exists: fm.fileExists(atPath: cwd)))
         }
     }
+    var perFolder: [String: Int] = [:]
+    for s in out { perFolder[s.cwd, default: 0] += 1 }
+    for i in out.indices { out[i].aloneInFolder = perFolder[out[i].cwd] == 1 }
+
     return out.sorted { $0.modified > $1.modified }
 }

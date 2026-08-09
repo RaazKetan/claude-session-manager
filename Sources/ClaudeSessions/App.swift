@@ -30,17 +30,56 @@ func resume(_ s: Session) {
     NSWorkspace.shared.open(url)
 }
 
-/// tty of a `claude` already running in this directory, if any.
+/// tty of the running `claude` for this session, or nil if it isn't running — or if we
+/// can't tell which of several sessions in the folder is the one on screen.
 func runningSessionTTY(_ s: Session) -> String? {
+    // Exact: our own resume passes `--resume <id>`, so the id is in the process arguments.
+    if let tty = claudeTTY(matching: "ps -o command= -p $pid | grep -q -- \(s.id)") { return tty }
+
+    // A folder match only identifies the session when the folder holds exactly one.
+    // Guessing between siblings would surface the wrong window.
+    guard s.aloneInFolder else { return nil }
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    return claudeTTY(matching: "[ \"$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')\" = \(quoted) ]")
+}
+
+private func claudeTTY(matching test: String) -> String? {
     let tty = sh("""
         for pid in $(pgrep -x claude); do
-          d=$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
-          if [ "$d" = \(quoted) ]; then ps -o tty= -p $pid | tr -d ' '; break; fi
+          if \(test); then ps -o tty= -p $pid | tr -d ' '; break; fi
         done
         """)
     guard let tty, !tty.isEmpty, tty != "??" else { return nil }
     return "/dev/" + tty
+}
+
+/// Bundle path with any Homebrew version baked out of it:
+/// …/Cellar/claude-session-manager/1.3.1/X.app → …/opt/claude-session-manager/X.app
+func stableBundlePath() -> String {
+    let path = Bundle.main.bundleURL.path
+    guard let range = path.range(of: "/Cellar/[^/]+/[^/]+/", options: .regularExpression) else { return path }
+    let formula = path[range].split(separator: "/")[1]
+    return path.replacingCharacters(in: range, with: "/opt/\(formula)/")
+}
+
+/// Starts the app at login.
+// ponytail: SMAppService records the bundle's literal path, which under a Homebrew formula
+//           is a versioned Cellar directory that `brew upgrade` deletes — leaving a login
+//           item pointing at nothing. Our own agent can name the stable symlink instead.
+func enableLaunchAtLogin() {
+    try? SMAppService.mainApp.unregister()   // drop the Cellar-pinned entry older builds made
+
+    let agents = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents")
+    let plist: [String: Any] = [
+        "Label": "dev.local.claudesessions",
+        "ProgramArguments": ["\(stableBundlePath())/Contents/MacOS/ClaudeSessions"],
+        "RunAtLoad": true,
+    ]
+    guard let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+    else { return }
+    try? FileManager.default.createDirectory(at: agents, withIntermediateDirectories: true)
+    try? data.write(to: agents.appendingPathComponent("dev.local.claudesessions.plist"), options: .atomic)
 }
 
 /// Focuses the window already running this session.
@@ -195,8 +234,7 @@ struct ClaudeSessionsApp: App {
             exit(0)
         }
         Statusline.installIfNeeded()
-        // Start at login. Idempotent, and fails harmlessly when run from a build directory.
-        try? SMAppService.mainApp.register()
+        enableLaunchAtLogin()
     }
 
     var body: some Scene {
