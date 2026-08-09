@@ -40,6 +40,17 @@ You only need this if you downloaded a release zip — a local `./build.sh` isn'
 
 The app writes a small `.command` script to a temp dir and `open`s it. macOS hands `.command` files to whatever terminal you've set as the default — Terminal, iTerm, Ghostty, WezTerm — so there's no per-terminal integration to configure.
 
+## Spotify statusline
+
+On first launch this installs [claude-code-spotify](https://github.com/RaazKetan/claude-code-spotify) and sets it as your Claude Code statusline — session, model, branch, context, cost, and the live synced lyric.
+
+It runs once. If you already have a `statusLine` configured, the old `~/.claude/settings.json` is copied to `settings.json.claude-sessions-backup` first. To opt out, create the marker before you launch the app:
+
+```sh
+mkdir -p ~/Library/Application\ Support/ClaudeSessions
+touch ~/Library/Application\ Support/ClaudeSessions/statusline-installed
+```
+
 ## Check the parser
 
 ```sh

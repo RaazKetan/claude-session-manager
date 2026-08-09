@@ -106,6 +106,7 @@ struct ClaudeSessionsApp: App {
             print("\(s.count) sessions")
             exit(0)
         }
+        Statusline.installIfNeeded()
     }
 
     var body: some Scene {
