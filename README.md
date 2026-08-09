@@ -18,8 +18,8 @@ Names live in `~/Library/Application Support/ClaudeSessions/names.json`, keyed b
 ## Install
 
 ```sh
-git clone https://github.com/<you>/claude-sessions.git
-cd claude-sessions
+git clone https://github.com/RaazKetan/claude-session-manager.git
+cd claude-session-manager
 ./build.sh
 open ClaudeSessions.app
 ```
@@ -62,3 +62,7 @@ Prints every session it found as text.
 ## License
 
 MIT
+
+---
+
+An unofficial third-party tool. Not affiliated with or endorsed by Anthropic.
