@@ -89,30 +89,41 @@ func focusRunningSession(_ s: Session) -> Bool {
 
 // MARK: - UI
 
-/// Menu bar mark: a prompt chevron beside a stack of sessions.
-// ponytail: drawn in code so there is no asset catalog. Template image, so macOS tints it for light/dark.
+/// Menu bar mark: a session window with a prompt inside it.
+// ponytail: drawn in code, no asset catalog. Monoline at a single stroke weight so it
+//           sits with the system icons; template image, so macOS tints it per theme.
 let statusIcon: NSImage = {
+    let stroke: CGFloat = 1.5
+
     let icon = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
         NSColor.black.setStroke()
 
+        let window = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2.6, width: 15, height: 12.8),
+                                  xRadius: 2.8, yRadius: 2.8)
+        window.lineWidth = stroke
+        window.stroke()
+
+        let titleBar = NSBezierPath()
+        titleBar.move(to: NSPoint(x: 1.5, y: 12.0))
+        titleBar.line(to: NSPoint(x: 16.5, y: 12.0))
+        titleBar.lineWidth = stroke
+        titleBar.stroke()
+
         let chevron = NSBezierPath()
-        chevron.move(to: NSPoint(x: 2.4, y: 13.4))
-        chevron.line(to: NSPoint(x: 6.6, y: 9))
-        chevron.line(to: NSPoint(x: 2.4, y: 4.6))
-        chevron.lineWidth = 2.1
+        chevron.move(to: NSPoint(x: 4.8, y: 9.4))
+        chevron.line(to: NSPoint(x: 7.4, y: 7.4))
+        chevron.line(to: NSPoint(x: 4.8, y: 5.4))
+        chevron.lineWidth = stroke
         chevron.lineCapStyle = .round
         chevron.lineJoinStyle = .round
         chevron.stroke()
 
-        // Session list: three bars, shortening downward.
-        for (i, y) in [13.0, 9.0, 5.0].enumerated() {
-            let bar = NSBezierPath()
-            bar.move(to: NSPoint(x: 9.4, y: y))
-            bar.line(to: NSPoint(x: 15.6 - Double(i) * 2.2, y: y))
-            bar.lineWidth = 2.1
-            bar.lineCapStyle = .round
-            bar.stroke()
-        }
+        let cursor = NSBezierPath()
+        cursor.move(to: NSPoint(x: 9.0, y: 5.4))
+        cursor.line(to: NSPoint(x: 12.6, y: 5.4))
+        cursor.lineWidth = stroke
+        cursor.lineCapStyle = .round
+        cursor.stroke()
 
         return true
     }

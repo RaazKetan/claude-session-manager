@@ -1,83 +1,56 @@
 # Claude Sessions
 
-A macOS menu bar widget listing every Claude Code session on your machine. Click one to resume it in your terminal.
+A macOS menu bar app listing every Claude Code session on your machine. Click one to resume it.
 
-![menu bar](https://img.shields.io/badge/macOS-13%2B-black)
+![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black) ![Swift](https://img.shields.io/badge/Swift-5.9-orange) ![MIT](https://img.shields.io/badge/license-MIT-blue)
 
-- Reads `~/.claude/projects/*/*.jsonl` — the session log Claude Code already writes. Nothing is sent anywhere.
-- Each row shows the first prompt, the project path, and the date it was created. Sorted by most recent.
-- Clicking switches to the session's existing window if it's already running, otherwise it runs `claude --resume <id>` in that directory, in your default terminal.
-- Sessions whose folder has since been deleted are greyed out and not clickable.
-- Adds itself to your login items on first launch, so it's there after a reboot.
+## Install
 
-Switching to a running session works with Terminal and iTerm2, which expose a tty per tab. Other terminals open a new window instead.
+```sh
+brew install RaazKetan/tap/claude-session-manager
+open /opt/homebrew/opt/claude-session-manager/ClaudeSessions.app
+```
 
-## Naming sessions
+Needs the Xcode Command Line Tools (`xcode-select --install`). No Xcode? Use the prebuilt cask instead:
 
-The label is the first usable prompt of the conversation. To override it, add the session id to `~/Library/Application Support/ClaudeSessions/names.json`:
+```sh
+brew install --cask RaazKetan/tap/claude-sessions && open /Applications/ClaudeSessions.app
+```
+
+No Homebrew? `curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh`
+
+## What it does
+
+- Lists every session from `~/.claude/projects/*/*.jsonl`, newest first. Nothing leaves your machine.
+- Clicking **switches to the session's window** if it's already running, otherwise resumes it in your default terminal. Window switching needs Terminal or iTerm2; other terminals get a new window.
+- Greys out sessions whose folder was deleted.
+- Starts at login.
+- Installs the [Spotify statusline](https://github.com/RaazKetan/claude-code-spotify) on first launch, backing up any `statusLine` you already have. To skip it, `touch ~/Library/Application\ Support/ClaudeSessions/statusline-installed` first.
+
+Rename a session by adding its id to `~/Library/Application Support/ClaudeSessions/names.json`:
 
 ```json
 { "90d19fcb-8ba7-4016-99a1-465cd4a5c7ae": "Conekt deploy" }
 ```
 
-Delete the file to go back to auto labels everywhere.
-
-## Install
+## Uninstall
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh
+brew uninstall claude-session-manager   # or: brew uninstall --cask claude-sessions
+rm -rf ~/Library/"Application Support"/ClaudeSessions
 ```
 
-Builds from source and drops it in `/Applications`. Needs the Xcode Command Line Tools (`xcode-select --install`) — there's no signed binary to download, see below.
+Then remove it from **System Settings → General → Login Items**.
 
-Or by hand:
+## Development
 
 ```sh
-git clone https://github.com/RaazKetan/claude-session-manager.git
-cd claude-session-manager
-./build.sh
-open ClaudeSessions.app
+swift run ClaudeSessions --list   # print parsed sessions, no UI ('!' = folder gone)
+./build.sh                        # assemble ClaudeSessions.app
 ```
 
-Move `ClaudeSessions.app` to `/Applications` and add it to **System Settings → General → Login Items** to have it always there.
-
-### "ClaudeSessions is damaged and can't be opened"
-
-The app is ad-hoc signed, not notarized, so macOS quarantines it. Strip the flag:
-
-```sh
-xattr -dr com.apple.quarantine ClaudeSessions.app
-```
-
-You only need this if you downloaded a release zip — a local `./build.sh` isn't quarantined.
-
-## How resume works
-
-The app writes a small `.command` script to a temp dir and `open`s it. macOS hands `.command` files to whatever terminal you've set as the default — Terminal, iTerm, Ghostty, WezTerm — so there's no per-terminal integration to configure.
-
-## Spotify statusline
-
-On first launch this installs [claude-code-spotify](https://github.com/RaazKetan/claude-code-spotify) and sets it as your Claude Code statusline — session, model, branch, context, cost, and the live synced lyric.
-
-It runs once. If you already have a `statusLine` configured, the old `~/.claude/settings.json` is copied to `settings.json.claude-sessions-backup` first. To opt out, create the marker before you launch the app:
-
-```sh
-mkdir -p ~/Library/Application\ Support/ClaudeSessions
-touch ~/Library/Application\ Support/ClaudeSessions/statusline-installed
-```
-
-## Check the parser
-
-```sh
-swift run ClaudeSessions --list
-```
-
-Prints every session it found as text.
+If macOS calls a downloaded build damaged, it's the missing notarization: `xattr -dr com.apple.quarantine /Applications/ClaudeSessions.app`.
 
 ## License
 
-MIT
-
----
-
-An unofficial third-party tool. Not affiliated with or endorsed by Anthropic.
+MIT — an unofficial third-party tool, not affiliated with or endorsed by Anthropic.
