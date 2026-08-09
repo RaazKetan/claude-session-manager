@@ -56,18 +56,4 @@ enum Statusline {
         guard let out = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) else { return }
         try? out.write(to: settings, options: .atomic)
     }
-
-    @discardableResult
-    private static func sh(_ command: String) -> String? {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        p.arguments = ["-lc", command]          // login shell, so PATH matches the user's terminal
-        let pipe = Pipe()
-        p.standardOutput = pipe
-        p.standardError = Pipe()
-        guard (try? p.run()) != nil else { return nil }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit()
-        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }

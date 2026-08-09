@@ -15,6 +15,25 @@ struct Session: Identifiable {
     var project: String { (cwd as NSString).lastPathComponent }
 }
 
+/// Runs a command in a login shell so PATH matches the user's terminal.
+@discardableResult
+func sh(_ command: String) -> String? { run("/bin/zsh", ["-lc", command]) }
+
+func osascript(_ source: String) -> String? { run("/usr/bin/osascript", ["-e", source]) }
+
+private func run(_ tool: String, _ arguments: [String]) -> String? {
+    let p = Process()
+    p.executableURL = URL(fileURLWithPath: tool)
+    p.arguments = arguments
+    let pipe = Pipe()
+    p.standardOutput = pipe
+    p.standardError = Pipe()
+    guard (try? p.run()) != nil else { return nil }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    p.waitUntilExit()
+    return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
 /// User-chosen labels, keyed by session id.
 // ponytail: one JSON file in Application Support — the widget reads the same path, so no App Group entitlement is needed.
 enum Names {

@@ -1,8 +1,10 @@
 import SwiftUI
 import ServiceManagement
 
-/// Opens the session in whatever app handles .command files — i.e. the user's default terminal.
+/// Brings an already-running session forward, or starts it in the default terminal.
 func resume(_ s: Session) {
+    if focusRunningSession(s) { return }
+
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
     let script = "#!/bin/zsh\ncd \(quoted) && claude --resume \(s.id)\n"
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.id).command")
@@ -11,25 +13,106 @@ func resume(_ s: Session) {
     NSWorkspace.shared.open(url)
 }
 
+/// tty of a `claude` already running in this directory, if any.
+func runningSessionTTY(_ s: Session) -> String? {
+    let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    let tty = sh("""
+        for pid in $(pgrep -x claude); do
+          d=$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
+          if [ "$d" = \(quoted) ]; then ps -o tty= -p $pid | tr -d ' '; break; fi
+        done
+        """)
+    guard let tty, !tty.isEmpty, tty != "??" else { return nil }
+    return "/dev/" + tty
+}
+
+/// Focuses the window already running this session.
+// ponytail: only Terminal and iTerm2 expose tty per tab. Any other terminal falls through to a new window.
+func focusRunningSession(_ s: Session) -> Bool {
+    guard let tty = runningSessionTTY(s) else { return false }
+    let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+
+    if running.contains("com.apple.Terminal"), osascript("""
+        tell application "Terminal"
+          repeat with w in windows
+            repeat with t in tabs of w
+              if tty of t is "\(tty)" then
+                set selected of t to true
+                set index of w to 1
+                activate
+                return "ok"
+              end if
+            end repeat
+          end repeat
+        end tell
+        return "no"
+        """) == "ok" { return true }
+
+    if running.contains("com.googlecode.iterm2"), osascript("""
+        tell application "iTerm2"
+          repeat with w in windows
+            repeat with t in tabs of w
+              repeat with ss in sessions of t
+                if tty of ss is "\(tty)" then
+                  select ss
+                  select t
+                  select w
+                  activate
+                  return "ok"
+                end if
+              end repeat
+            end repeat
+          end repeat
+        end tell
+        return "no"
+        """) == "ok" { return true }
+
+    return false
+}
+
 // MARK: - UI
+
+/// Menu bar mark: a terminal window whose prompt chevron doubles as a "resume" play head.
+// ponytail: drawn in code so there is no asset catalog. Template image, so macOS tints it for light/dark.
+let statusIcon: NSImage = {
+    let icon = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
+        NSColor.black.setStroke()
+
+        let window = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2.5, width: 15, height: 13),
+                                  xRadius: 3.5, yRadius: 3.5)
+        window.lineWidth = 1.4
+        window.stroke()
+
+        let chevron = NSBezierPath()
+        chevron.move(to: NSPoint(x: 5.4, y: 11.4))
+        chevron.line(to: NSPoint(x: 8.6, y: 9))
+        chevron.line(to: NSPoint(x: 5.4, y: 6.6))
+        chevron.lineWidth = 1.7
+        chevron.lineCapStyle = .round
+        chevron.lineJoinStyle = .round
+        chevron.stroke()
+
+        let cursor = NSBezierPath()
+        cursor.move(to: NSPoint(x: 10.2, y: 6.6))
+        cursor.line(to: NSPoint(x: 12.8, y: 6.6))
+        cursor.lineWidth = 1.7
+        cursor.lineCapStyle = .round
+        cursor.stroke()
+
+        return true
+    }
+    icon.isTemplate = true
+    return icon
+}()
 
 struct SessionList: View {
     @State private var sessions: [Session] = []
     @State private var query = ""
-    @State private var editing: String?     // session id being renamed
-    @State private var draft = ""
-    @FocusState private var nameFieldFocused: Bool
 
     var filtered: [Session] {
         query.isEmpty ? sessions : sessions.filter {
             ($0.cwd + " " + $0.label).localizedCaseInsensitiveContains(query)
         }
-    }
-
-    func commit(_ s: Session) {
-        Names.set(draft, for: s.id)
-        editing = nil
-        sessions = loadSessions()
     }
 
     var body: some View {
@@ -40,45 +123,23 @@ struct SessionList: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(filtered) { s in
-                        HStack(spacing: 4) {
-                            Button { resume(s) } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    if editing == s.id {
-                                        TextField("Name this session", text: $draft)
-                                            .textFieldStyle(.roundedBorder).font(.system(size: 12))
-                                            .focused($nameFieldFocused)
-                                            .onSubmit { commit(s) }
-                                            .onExitCommand { editing = nil }
-                                    } else {
-                                        Text(s.label).lineLimit(1).font(.system(size: 12, weight: .medium))
-                                            .foregroundStyle(s.exists ? .primary : .tertiary)
-                                    }
-                                    Text(s.exists ? s.cwd : "\(s.cwd) — folder is gone")
-                                        .lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
-                                    Text(s.created.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.system(size: 10)).foregroundStyle(.tertiary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 4).padding(.leading, 6)
-                                .contentShape(Rectangle())
+                        Button { resume(s) } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(s.label).lineLimit(1).font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(s.exists ? .primary : .tertiary)
+                                Text(s.exists ? s.cwd : "\(s.cwd) — folder is gone")
+                                    .lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
+                                Text(s.created.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.system(size: 10)).foregroundStyle(.tertiary)
                             }
-                            .buttonStyle(.plain)
-                            .disabled(!s.exists || editing == s.id)
-                            .help(s.exists ? "Resume in terminal" : "That directory no longer exists")
-
-                            Button {
-                                if editing == s.id { commit(s) } else {
-                                    draft = s.name ?? ""
-                                    editing = s.id
-                                    nameFieldFocused = true
-                                }
-                            } label: {
-                                Image(systemName: editing == s.id ? "checkmark" : "pencil")
-                                    .font(.system(size: 10)).foregroundStyle(.secondary)
-                            }
-                            .buttonStyle(.plain).padding(.trailing, 6)
-                            .help(s.name == nil ? "Name this session" : "Rename (clear the field to restore the prompt)")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 4).padding(.horizontal, 6)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .disabled(!s.exists)
+                        .help(s.exists ? "Resume — switches to its window if it is already open"
+                                       : "That directory no longer exists")
                     }
                 }
             }
@@ -113,7 +174,7 @@ struct ClaudeSessionsApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Claude Sessions", systemImage: "terminal") { SessionList() }
+        MenuBarExtra { SessionList() } label: { Image(nsImage: statusIcon) }
             .menuBarExtraStyle(.window)
     }
 }

@@ -1,7 +1,8 @@
 #!/bin/zsh
 # Builds ClaudeSessions.app (menu bar app, no dock icon).
 set -e
-swift build -c release
+# --disable-sandbox: SwiftPM cannot nest its own sandbox inside Homebrew's build sandbox
+swift build -c release --disable-sandbox
 APP="ClaudeSessions.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
