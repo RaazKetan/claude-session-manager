@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 /// Opens the session in whatever app handles .command files — i.e. the user's default terminal.
 func resume(_ s: Session) {
@@ -107,6 +108,8 @@ struct ClaudeSessionsApp: App {
             exit(0)
         }
         Statusline.installIfNeeded()
+        // Start at login. Idempotent, and fails harmlessly when run from a build directory.
+        try? SMAppService.mainApp.register()
     }
 
     var body: some Scene {
