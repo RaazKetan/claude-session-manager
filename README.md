@@ -19,6 +19,16 @@ open ClaudeSessions.app
 
 Move `ClaudeSessions.app` to `/Applications` and add it to **System Settings → General → Login Items** to have it always there.
 
+### "ClaudeSessions is damaged and can't be opened"
+
+The app is ad-hoc signed, not notarized, so macOS quarantines it. Strip the flag:
+
+```sh
+xattr -dr com.apple.quarantine ClaudeSessions.app
+```
+
+You only need this if you downloaded a release zip — a local `./build.sh` isn't quarantined.
+
 ## How resume works
 
 The app writes a small `.command` script to a temp dir and `open`s it. macOS hands `.command` files to whatever terminal you've set as the default — Terminal, iTerm, Ghostty, WezTerm — so there's no per-terminal integration to configure.

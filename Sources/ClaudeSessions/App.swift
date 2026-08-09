@@ -8,8 +8,26 @@ struct Session: Identifiable {
     let title: String
     let created: Date
     let modified: Date
+    let exists: Bool
 
     var project: String { (cwd as NSString).lastPathComponent }
+}
+
+/// First line of a user message, or nil if it's not worth showing as a title.
+// ponytail: opening prompts are often junk — image-only, a slash command, a giant paste. Caller falls through to the next one.
+func usableTitle(_ obj: [String: Any]) -> String? {
+    let content = (obj["message"] as? [String: Any])?["content"]
+    var text = ""
+    if let s = content as? String {
+        text = s
+    } else if let blocks = content as? [[String: Any]] {
+        text = blocks.compactMap { $0["text"] as? String }.joined(separator: " ")
+    }
+    let junk = CharacterSet(charactersIn: "─━—-=_* ").union(.whitespacesAndNewlines)
+    guard let line = text.split(separator: "\n").first?.trimmingCharacters(in: junk), line.count >= 3 else { return nil }
+    guard !"<[/".contains(line.first!), !line.hasPrefix("Caveat:") else { return nil }
+    guard line.count < 2000 else { return nil }  // a dumped file or stack trace, not a prompt
+    return line.count > 160 ? line.prefix(160) + "…" : line
 }
 
 /// Scans ~/.claude/projects/*/*.jsonl.
@@ -30,28 +48,26 @@ func loadSessions() -> [Session] {
             defer { try? head.close() }
             guard let chunk = try? head.read(upToCount: 64 * 1024), let text = String(data: chunk, encoding: .utf8) else { continue }
 
+            var cwd: String?, sid: String?, created = Date.distantPast, title: String?
             for line in text.split(separator: "\n") {
                 guard let obj = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
                       obj["type"] as? String == "user",
-                      let cwd = obj["cwd"] as? String,
-                      let sid = obj["sessionId"] as? String else { continue }
+                      let c = obj["cwd"] as? String,
+                      let s = obj["sessionId"] as? String else { continue }
 
-                let msg = obj["message"] as? [String: Any]
-                var title = ""
-                if let s = msg?["content"] as? String {
-                    title = s
-                } else if let blocks = msg?["content"] as? [[String: Any]] {
-                    title = blocks.compactMap { $0["text"] as? String }.joined(separator: " ")
+                if cwd == nil {  // identity + creation time come from the first message, whatever it says
+                    (cwd, sid) = (c, s)
+                    created = (obj["timestamp"] as? String).flatMap(iso.date(from:)) ?? .distantPast
                 }
-                title = title.split(separator: "\n").first.map(String.init)?.trimmingCharacters(in: .whitespaces) ?? ""
-
-                let created = (obj["timestamp"] as? String).flatMap(iso.date(from:)) ?? .distantPast
-                let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? created
-
-                out.append(Session(id: sid, cwd: cwd, title: title.isEmpty ? "(no prompt)" : title,
-                                   created: created, modified: modified))
-                break // first user message is enough
+                title = usableTitle(obj)
+                if title != nil { break }
             }
+            guard let cwd, let sid else { continue }
+
+            let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? created
+            out.append(Session(id: sid, cwd: cwd, title: title ?? "(no prompt)",
+                               created: created, modified: modified,
+                               exists: fm.fileExists(atPath: cwd)))
         }
     }
     return out.sorted { $0.modified > $1.modified }
@@ -90,7 +106,9 @@ struct SessionList: View {
                         Button { resume(s) } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.title).lineLimit(1).font(.system(size: 12, weight: .medium))
-                                Text(s.cwd).lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
+                                    .foregroundStyle(s.exists ? .primary : .tertiary)
+                                Text(s.exists ? s.cwd : "\(s.cwd) — folder is gone")
+                                    .lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
                                 Text(s.created.formatted(date: .abbreviated, time: .shortened))
                                     .font(.system(size: 10)).foregroundStyle(.tertiary)
                             }
@@ -99,7 +117,8 @@ struct SessionList: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .help("Resume in terminal")
+                        .disabled(!s.exists)
+                        .help(s.exists ? "Resume in terminal" : "That directory no longer exists")
                     }
                 }
             }
@@ -123,7 +142,7 @@ struct ClaudeSessionsApp: App {
         // runnable check: `swift run ClaudeSessions --list`
         if CommandLine.arguments.contains("--list") {
             let s = loadSessions()
-            s.forEach { print("\($0.created.formatted())  \($0.cwd)  \($0.id)  \($0.title.prefix(50))") }
+            s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.id)  \($0.title.prefix(50))") }
             assert(s.allSatisfy { !$0.cwd.isEmpty && !$0.id.isEmpty }, "parsed session missing cwd/id")
             print("\(s.count) sessions")
             exit(0)
