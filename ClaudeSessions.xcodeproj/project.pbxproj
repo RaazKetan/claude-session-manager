@@ -1,0 +1,436 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9A6996583501A96634B331C9 /* ClaudeSessionsWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AFD92A3797317781518C87A2 /* ClaudeSessionsWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9C54037BECE2BEC8BB4D5A75 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B0D75718E2D0E04669758 /* App.swift */; };
+		A1245B4A6A87DB1599FF5757 /* Widget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7746D7185019BD4E368317E /* Widget.swift */; };
+		B067A3B5EBB91B28D6E2F3A6 /* Sessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91D0CCCF5C88201EAE5BC03 /* Sessions.swift */; };
+		E857B4EA4B455B3E0D4B50C1 /* Sessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91D0CCCF5C88201EAE5BC03 /* Sessions.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C8F84B014BF196D7D141B2D1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 852AB040239D245C841F6C24 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68754DCAF122C47C00FE026C;
+			remoteInfo = ClaudeSessionsWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		633A57B7C1417BE37F5CD48D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9A6996583501A96634B331C9 /* ClaudeSessionsWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2E05F71A98B28D8DE4CA6B08 /* ClaudeSessions.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeSessions.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		390B0D75718E2D0E04669758 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		A039B2B23096CEA76FCAC8A2 /* Widget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widget.entitlements; sourceTree = "<group>"; };
+		AFD92A3797317781518C87A2 /* ClaudeSessionsWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ClaudeSessionsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B44E9615474C375E2202817B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C7746D7185019BD4E368317E /* Widget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Widget.swift; sourceTree = "<group>"; };
+		C91D0CCCF5C88201EAE5BC03 /* Sessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sessions.swift; sourceTree = "<group>"; };
+		FAAD8F8BD05A0098205D5A27 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		18355031469DC68B5F8097E8 = {
+			isa = PBXGroup;
+			children = (
+				231FEBF026133C783D6BB3E4 /* App */,
+				C742FA6A14C49EA6F9E387A4 /* Shared */,
+				1B17113FF05A272A6632A7F9 /* Widget */,
+				B730C96FEC39D291E94DF95D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1B17113FF05A272A6632A7F9 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				FAAD8F8BD05A0098205D5A27 /* Info.plist */,
+				A039B2B23096CEA76FCAC8A2 /* Widget.entitlements */,
+				C7746D7185019BD4E368317E /* Widget.swift */,
+			);
+			name = Widget;
+			path = Sources/Widget;
+			sourceTree = "<group>";
+		};
+		231FEBF026133C783D6BB3E4 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				390B0D75718E2D0E04669758 /* App.swift */,
+				B44E9615474C375E2202817B /* Info.plist */,
+			);
+			name = App;
+			path = Sources/App;
+			sourceTree = "<group>";
+		};
+		B730C96FEC39D291E94DF95D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2E05F71A98B28D8DE4CA6B08 /* ClaudeSessions.app */,
+				AFD92A3797317781518C87A2 /* ClaudeSessionsWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C742FA6A14C49EA6F9E387A4 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C91D0CCCF5C88201EAE5BC03 /* Sessions.swift */,
+			);
+			name = Shared;
+			path = Sources/Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		178DA60A084C7808B1F4DB32 /* ClaudeSessions */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BAC6EDAAC1E40284126A2915 /* Build configuration list for PBXNativeTarget "ClaudeSessions" */;
+			buildPhases = (
+				275C5826F604C2E89CCEDA1F /* Sources */,
+				633A57B7C1417BE37F5CD48D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6D015F46953210BE4DD239D0 /* PBXTargetDependency */,
+			);
+			name = ClaudeSessions;
+			packageProductDependencies = (
+			);
+			productName = ClaudeSessions;
+			productReference = 2E05F71A98B28D8DE4CA6B08 /* ClaudeSessions.app */;
+			productType = "com.apple.product-type.application";
+		};
+		68754DCAF122C47C00FE026C /* ClaudeSessionsWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 421D4EA663528F51929A8B23 /* Build configuration list for PBXNativeTarget "ClaudeSessionsWidget" */;
+			buildPhases = (
+				960EE3502EFD631182EFFB02 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClaudeSessionsWidget;
+			packageProductDependencies = (
+			);
+			productName = ClaudeSessionsWidget;
+			productReference = AFD92A3797317781518C87A2 /* ClaudeSessionsWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		852AB040239D245C841F6C24 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					178DA60A084C7808B1F4DB32 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+					68754DCAF122C47C00FE026C = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 6E4FDF203AD6E7CA0DCE7ECB /* Build configuration list for PBXProject "ClaudeSessions" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 18355031469DC68B5F8097E8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B730C96FEC39D291E94DF95D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				178DA60A084C7808B1F4DB32 /* ClaudeSessions */,
+				68754DCAF122C47C00FE026C /* ClaudeSessionsWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		275C5826F604C2E89CCEDA1F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C54037BECE2BEC8BB4D5A75 /* App.swift in Sources */,
+				B067A3B5EBB91B28D6E2F3A6 /* Sessions.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		960EE3502EFD631182EFFB02 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E857B4EA4B455B3E0D4B50C1 /* Sessions.swift in Sources */,
+				A1245B4A6A87DB1599FF5757 /* Widget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6D015F46953210BE4DD239D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68754DCAF122C47C00FE026C /* ClaudeSessionsWidget */;
+			targetProxy = C8F84B014BF196D7D141B2D1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3C6F4EF82937162E97329308 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Sources/Widget/Widget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.local.ClaudeSessions.Widget;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6DB279E17DF7EA31DD86B588 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Sources/Widget/Widget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.local.ClaudeSessions.Widget;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		8FB187FE2170B64357CB9A66 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.local.ClaudeSessions;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9FE8C3D6FDC36C9E0D25DEFE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.local.ClaudeSessions;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C46F07B7CDBE6769EE972131 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		F7DA9B3F29B118AD1C2B83D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		421D4EA663528F51929A8B23 /* Build configuration list for PBXNativeTarget "ClaudeSessionsWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6DB279E17DF7EA31DD86B588 /* Debug */,
+				3C6F4EF82937162E97329308 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6E4FDF203AD6E7CA0DCE7ECB /* Build configuration list for PBXProject "ClaudeSessions" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C46F07B7CDBE6769EE972131 /* Debug */,
+				F7DA9B3F29B118AD1C2B83D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BAC6EDAAC1E40284126A2915 /* Build configuration list for PBXNativeTarget "ClaudeSessions" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9FE8C3D6FDC36C9E0D25DEFE /* Debug */,
+				8FB187FE2170B64357CB9A66 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 852AB040239D245C841F6C24 /* Project object */;
+}
