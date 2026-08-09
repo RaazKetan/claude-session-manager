@@ -6,7 +6,24 @@ func resume(_ s: Session) {
     if focusRunningSession(s) { return }
 
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
-    let script = "#!/bin/zsh\ncd \(quoted) && claude --resume \(s.id)\n"
+    // Explain the two ways this can fail, instead of leaving a bare "command not found".
+    let script = """
+        #!/bin/zsh
+        cd \(quoted) 2>/dev/null || {
+          echo "That folder is gone: \(s.cwd)"
+          read "?Press return to close… "
+          exit 1
+        }
+        if ! command -v claude >/dev/null 2>&1; then
+          echo "Claude Code isn't installed, or 'claude' isn't on your PATH."
+          echo "Install it from https://claude.com/claude-code, then try again."
+          echo
+          read "?Press return to close… "
+          exit 1
+        fi
+        claude --resume \(s.id)
+
+        """
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.id).command")
     try? script.write(to: url, atomically: true, encoding: .utf8)
     try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
@@ -72,32 +89,30 @@ func focusRunningSession(_ s: Session) -> Bool {
 
 // MARK: - UI
 
-/// Menu bar mark: a terminal window whose prompt chevron doubles as a "resume" play head.
+/// Menu bar mark: a prompt chevron beside a stack of sessions.
 // ponytail: drawn in code so there is no asset catalog. Template image, so macOS tints it for light/dark.
 let statusIcon: NSImage = {
     let icon = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
         NSColor.black.setStroke()
 
-        let window = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2.5, width: 15, height: 13),
-                                  xRadius: 3.5, yRadius: 3.5)
-        window.lineWidth = 1.4
-        window.stroke()
-
         let chevron = NSBezierPath()
-        chevron.move(to: NSPoint(x: 5.4, y: 11.4))
-        chevron.line(to: NSPoint(x: 8.6, y: 9))
-        chevron.line(to: NSPoint(x: 5.4, y: 6.6))
-        chevron.lineWidth = 1.7
+        chevron.move(to: NSPoint(x: 2.4, y: 13.4))
+        chevron.line(to: NSPoint(x: 6.6, y: 9))
+        chevron.line(to: NSPoint(x: 2.4, y: 4.6))
+        chevron.lineWidth = 2.1
         chevron.lineCapStyle = .round
         chevron.lineJoinStyle = .round
         chevron.stroke()
 
-        let cursor = NSBezierPath()
-        cursor.move(to: NSPoint(x: 10.2, y: 6.6))
-        cursor.line(to: NSPoint(x: 12.8, y: 6.6))
-        cursor.lineWidth = 1.7
-        cursor.lineCapStyle = .round
-        cursor.stroke()
+        // Session list: three bars, shortening downward.
+        for (i, y) in [13.0, 9.0, 5.0].enumerated() {
+            let bar = NSBezierPath()
+            bar.move(to: NSPoint(x: 9.4, y: y))
+            bar.line(to: NSPoint(x: 15.6 - Double(i) * 2.2, y: y))
+            bar.lineWidth = 2.1
+            bar.lineCapStyle = .round
+            bar.stroke()
+        }
 
         return true
     }
