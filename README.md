@@ -18,6 +18,14 @@ Names live in `~/Library/Application Support/ClaudeSessions/names.json`, keyed b
 ## Install
 
 ```sh
+curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh
+```
+
+Builds from source and drops it in `/Applications`. Needs the Xcode Command Line Tools (`xcode-select --install`) — there's no signed binary to download, see below.
+
+Or by hand:
+
+```sh
 git clone https://github.com/RaazKetan/claude-session-manager.git
 cd claude-session-manager
 ./build.sh
