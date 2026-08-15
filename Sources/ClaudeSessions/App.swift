@@ -335,6 +335,9 @@ struct SessionList: View {
             HStack {
                 Text(searchingInside ? "searching…" : "\(filtered.count) sessions")
                     .font(.caption).foregroundStyle(.secondary)
+                // Visible version, so "did the upgrade land?" is answerable at a glance.
+                Text("v\(Update.current)")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }.buttonStyle(.plain).font(.caption)
             }
