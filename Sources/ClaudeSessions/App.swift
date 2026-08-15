@@ -147,7 +147,7 @@ private let iconPixels = [
 // ponytail: 1.5pt cells land on whole device pixels at 2x, so the sprite stays crisp
 //           instead of smearing the way a scaled bitmap would.
 let statusIcon: NSImage = {
-    let cell: CGFloat = 1.5
+    let cell: CGFloat = 1.25
     let cols = CGFloat(iconPixels[0].count), rows = CGFloat(iconPixels.count)
 
     let icon = NSImage(size: NSSize(width: cols * cell, height: rows * cell), flipped: false) { _ in
