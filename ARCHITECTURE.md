@@ -118,6 +118,12 @@ flowchart TD
     C --> E["macOS flags downloads,<br/>so the install clears the flag"]
 ```
 
+## Update check
+
+One request to GitHub's releases API on launch, cached for the session. It compares tags
+numerically, so 1.10.0 correctly beats 1.9.0. Nothing is downloaded or installed — the app
+shows the `brew upgrade` command and Homebrew stays in charge of the actual update.
+
 ## What it can't do yet
 
 | | |

@@ -32,9 +32,10 @@ curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/ma
 - Click one to resume it. If it's already open, it jumps to that window instead of starting a second one.
 - Marks the sessions running right now.
 - Starts automatically when you log in.
+- Tells you when an update is out, and copies the upgrade command for you.
 - Optional checkbox to resume Claude sessions with `--dangerously-skip-permissions`, so they never stop to ask before running a tool. Off unless you turn it on.
 - Sessions whose folder you deleted are greyed out.
-- Reads the logs these tools already keep on your Mac. Nothing is uploaded.
+- Reads the logs these tools already keep on your Mac. Nothing about you is sent anywhere. The only network call is one request to GitHub on launch, to see whether a newer version exists.
 
 It also installs the [Spotify statusline](https://github.com/RaazKetan/claude-code-spotify) the first time you open it, and backs up your old `statusLine` setting. To skip that, create the file `~/Library/Application Support/ClaudeSessions/statusline-installed` before launching.
 

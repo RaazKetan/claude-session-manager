@@ -173,6 +173,8 @@ struct SessionList: View {
     @State private var hovered: String?
     @State private var insideMatches: Set<String> = []
     @State private var searchingInside = false
+    @State private var updateAvailable: String?
+    @State private var copiedUpgrade = false
     @AppStorage("agentFilterRaw") private var agentFilterRaw = ""
     private var agentFilter: Agent? {
         get { Agent(rawValue: agentFilterRaw) }
@@ -308,6 +310,28 @@ struct SessionList: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .help("Resume with --dangerously-skip-permissions, so the session never asks before running a tool")
 
+            if let newer = updateAvailable {
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(Update.upgradeCommand, forType: .string)
+                    copiedUpgrade = true
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.down.circle")
+                        Text(copiedUpgrade ? "Copied — paste it in a terminal"
+                                           : "Version \(newer) is out. Click to copy the upgrade command.")
+                        Spacer()
+                    }
+                    .font(.caption)
+                    .padding(.vertical, 5).padding(.horizontal, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(Update.upgradeCommand)
+            }
+
             HStack {
                 Text(searchingInside ? "searching…" : "\(filtered.count) sessions")
                     .font(.caption).foregroundStyle(.secondary)
@@ -318,6 +342,7 @@ struct SessionList: View {
         .padding(10)
         .frame(width: 340)
         .onAppear { sessions = loadSessions() }
+        .task { updateAvailable = await Update.newerVersion() }
     }
 }
 
