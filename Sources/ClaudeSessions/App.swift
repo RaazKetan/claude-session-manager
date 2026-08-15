@@ -7,8 +7,6 @@ import ServiceManagement
 func resume(_ s: Session, skipPermissions: Bool = false) {
     if focusRunningSession(s) { return }
 
-    let flags = skipPermissions ? " --dangerously-skip-permissions" : ""
-
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
     // Explain the two ways this can fail, instead of leaving a bare "command not found".
     let script = """
@@ -18,17 +16,17 @@ func resume(_ s: Session, skipPermissions: Bool = false) {
           read "?Press return to close… "
           exit 1
         }
-        if ! command -v claude >/dev/null 2>&1; then
-          echo "Claude Code isn't installed, or 'claude' isn't on your PATH."
-          echo "Install it from https://claude.com/claude-code, then try again."
+        if ! command -v \(s.agent.binary) >/dev/null 2>&1; then
+          echo "'\(s.agent.binary)' isn't installed, or isn't on your PATH."
+          echo "Install it from \(s.agent.installURL), then try again."
           echo
           read "?Press return to close… "
           exit 1
         fi
-        claude --resume \(s.id)\(flags)
+        \(s.agent.resumeCommand(s.sessionID, skipPermissions: skipPermissions))
 
         """
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.id).command")
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.sessionID).command")
     try? script.write(to: url, atomically: true, encoding: .utf8)
     try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
     NSWorkspace.shared.open(url)
@@ -37,19 +35,19 @@ func resume(_ s: Session, skipPermissions: Bool = false) {
 /// tty of the running `claude` for this session, or nil if it isn't running — or if we
 /// can't tell which of several sessions in the folder is the one on screen.
 func runningSessionTTY(_ s: Session) -> String? {
-    // Exact: our own resume passes `--resume <id>`, so the id is in the process arguments.
-    if let tty = claudeTTY(matching: "ps -o command= -p $pid | grep -q -- \(s.id)") { return tty }
+    // Exact: our own resume passes the id, so it is in the process arguments.
+    if let tty = agentTTY(s.agent, matching: "ps -o command= -p $pid | grep -q -- \(s.sessionID)") { return tty }
 
     // A folder match only identifies the session when the folder holds exactly one.
     // Guessing between siblings would surface the wrong window.
     guard s.aloneInFolder else { return nil }
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
-    return claudeTTY(matching: "[ \"$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')\" = \(quoted) ]")
+    return agentTTY(s.agent, matching: "[ \"$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')\" = \(quoted) ]")
 }
 
-private func claudeTTY(matching test: String) -> String? {
+private func agentTTY(_ agent: Agent, matching test: String) -> String? {
     let tty = sh("""
-        for pid in $(pgrep -x claude); do
+        for pid in $(pgrep -x \(agent.binary)); do
           if \(test); then ps -o tty= -p $pid | tr -d ' '; break; fi
         done
         """)
@@ -172,38 +170,132 @@ struct SessionList: View {
     @State private var sessions: [Session] = []
     @State private var query = ""
     @AppStorage("skipPermissions") private var skipPermissions = false
+    @State private var hovered: String?
+    @State private var insideMatches: Set<String> = []
+    @State private var searchingInside = false
+    @AppStorage("agentFilterRaw") private var agentFilterRaw = ""
+    private var agentFilter: Agent? {
+        get { Agent(rawValue: agentFilterRaw) }
+        nonmutating set { agentFilterRaw = newValue?.rawValue ?? "" }
+    }
 
+    /// Matches on the visible label and path, plus anything found inside the transcripts.
     var filtered: [Session] {
-        query.isEmpty ? sessions : sessions.filter {
-            ($0.cwd + " " + $0.label).localizedCaseInsensitiveContains(query)
+        sessions.filter { s in
+            guard agentFilter == nil || s.agent == agentFilter else { return false }
+            guard !query.isEmpty else { return true }
+            return (s.cwd + " " + s.label).localizedCaseInsensitiveContains(query)
+                || insideMatches.contains(s.sessionID)
         }
+    }
+
+    func count(_ agent: Agent?) -> Int {
+        agent == nil ? sessions.count : sessions.filter { $0.agent == agent }.count
+    }
+
+    /// True when the row only turned up because of what's inside the conversation.
+    func matchedInside(_ s: Session) -> Bool {
+        insideMatches.contains(s.sessionID)
+            && !(s.cwd + " " + s.label).localizedCaseInsensitiveContains(query)
     }
 
     var body: some View {
         VStack(spacing: 8) {
-            TextField("Filter", text: $query)
+            TextField("Search sessions and conversations", text: $query)
                 .textFieldStyle(.roundedBorder)
+                // Debounced, and .task(id:) cancels the previous scan when the query changes.
+                .task(id: query) {
+                    guard query.count >= 2 else { insideMatches = []; return }
+                    try? await Task.sleep(for: .milliseconds(250))
+                    guard !Task.isCancelled else { return }
+                    searchingInside = true
+                    let text = query
+                    let hits = await Task.detached(priority: .userInitiated) {
+                        sessionsContaining(text)
+                    }.value
+                    guard !Task.isCancelled else { return }
+                    insideMatches = hits
+                    searchingInside = false
+                }
+
+            HStack(spacing: 6) {
+                ForEach([nil] + Agent.allCases.map { Optional($0) }, id: \.self) { agent in
+                    let selected = agentFilter == agent
+                    Button {
+                        agentFilter = agent
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(agent?.label ?? "All")
+                            Text("\(count(agent))")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 10))
+                        }
+                        .font(.system(size: 11, weight: selected ? .semibold : .regular))
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(selected ? AnyShapeStyle(.selection) : AnyShapeStyle(.quaternary),
+                                    in: Capsule())
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(count(agent) == 0 && agent != nil)
+                    .opacity(count(agent) == 0 && agent != nil ? 0.4 : 1)
+                }
+                Spacer()
+            }
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(filtered) { s in
                         Button { resume(s, skipPermissions: skipPermissions) } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(s.label).lineLimit(1).font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(s.exists ? .primary : .tertiary)
-                                Text(s.exists ? s.cwd : "\(s.cwd) — folder is gone")
-                                    .lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
-                                Text(s.created.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 5) {
+                                    if s.isRunning {
+                                        Circle().fill(.green).frame(width: 6, height: 6)
+                                            .help("Running now")
+                                    }
+                                    Text(s.label)
+                                        .lineLimit(1)
+                                        .font(.system(size: 12.5, weight: .medium))
+                                        .foregroundStyle(s.exists ? .primary : .secondary)
+                                }
+
+                                HStack(spacing: 6) {
+                                    if agentFilter == nil {
+                                        Text(s.agent.label)
+                                            .font(.system(size: 9, weight: .medium))
+                                            .padding(.horizontal, 4).padding(.vertical, 1)
+                                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 3))
+                                    }
+                                    Text(s.shortPath)
+                                        .lineLimit(1).truncationMode(.head)
+                                    Text("·")
+                                    Text(s.when)
+                                    if !s.exists {
+                                        Text("folder missing")
+                                            .padding(.horizontal, 5).padding(.vertical, 1)
+                                            .background(.quaternary, in: Capsule())
+                                    }
+                                    if matchedInside(s) {
+                                        Label("in conversation", systemImage: "text.magnifyingglass")
+                                            .labelStyle(.titleAndIcon)
+                                            .padding(.horizontal, 5).padding(.vertical, 1)
+                                            .background(.quaternary, in: Capsule())
+                                    }
+                                }
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 4).padding(.horizontal, 6)
+                            .padding(.vertical, 6).padding(.horizontal, 8)
+                            .background(hovered == s.id ? AnyShapeStyle(.selection) : AnyShapeStyle(.clear),
+                                        in: RoundedRectangle(cornerRadius: 6))
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .disabled(!s.exists)
+                        .onHover { hovered = $0 ? s.id : (hovered == s.id ? nil : hovered) }
                         .help(s.exists ? "Resume — switches to its window if it is already open"
-                                       : "That directory no longer exists")
+                                       : "That folder no longer exists")
                     }
                 }
             }
@@ -217,7 +309,8 @@ struct SessionList: View {
                 .help("Resume with --dangerously-skip-permissions, so the session never asks before running a tool")
 
             HStack {
-                Text("\(filtered.count) sessions").font(.caption).foregroundStyle(.secondary)
+                Text(searchingInside ? "searching…" : "\(filtered.count) sessions")
+                    .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }.buttonStyle(.plain).font(.caption)
             }
@@ -234,7 +327,7 @@ struct ClaudeSessionsApp: App {
         // runnable check: `swift run ClaudeSessions --list`
         if CommandLine.arguments.contains("--list") {
             let s = loadSessions()
-            s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.id)  \($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }
+            s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.agent.label)  \($0.sessionID)  \($0.isRunning ? "[running] " : "")\($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }
             assert(s.allSatisfy { !$0.cwd.isEmpty && !$0.id.isEmpty }, "parsed session missing cwd/id")
             print("\(s.count) sessions")
             exit(0)

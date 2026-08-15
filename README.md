@@ -1,6 +1,6 @@
 # Claude Sessions
 
-All your Claude Code sessions in the menu bar. Click one to pick up where you left off.
+All your Claude Code and Codex sessions in the menu bar. Click one to pick up where you left off.
 
 ```sh
 brew install --cask RaazKetan/tap/claude-sessions && open /Applications/ClaudeSessions.app
@@ -28,18 +28,20 @@ curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/ma
 
 ## What it does
 
-- Lists every session on your Mac, newest first.
+- Lists every Claude Code and Codex session on your Mac, newest first. Filter by agent, or search inside the conversations themselves.
 - Click one to resume it. If it's already open, it jumps to that window instead of starting a second one.
+- Marks the sessions running right now.
 - Starts automatically when you log in.
-- Optional checkbox to resume with `--dangerously-skip-permissions`, so the session never stops to ask before running a tool. Off unless you turn it on.
+- Optional checkbox to resume Claude sessions with `--dangerously-skip-permissions`, so they never stop to ask before running a tool. Off unless you turn it on.
 - Sessions whose folder you deleted are greyed out.
-- Reads the logs Claude Code already keeps on your Mac. Nothing is uploaded.
+- Reads the logs these tools already keep on your Mac. Nothing is uploaded.
 
 It also installs the [Spotify statusline](https://github.com/RaazKetan/claude-code-spotify) the first time you open it, and backs up your old `statusLine` setting. To skip that, create the file `~/Library/Application Support/ClaudeSessions/statusline-installed` before launching.
 
 ## Good to know
 
 - Jumping to an open session works in Terminal and iTerm2. Other terminals open a new window.
+- Searching inside conversations uses [ripgrep](https://github.com/BurntSushi/ripgrep) when you have it, which makes it instant. Without it, it falls back to `grep` and takes a few seconds.
 - Session names come from the first thing you typed. To rename one, add its id to `~/Library/Application Support/ClaudeSessions/names.json`:
   ```json
   { "90d19fcb-8ba7-4016-99a1-465cd4a5c7ae": "Conekt deploy" }

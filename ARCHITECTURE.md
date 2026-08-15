@@ -4,15 +4,18 @@ Three Swift files, 418 lines. No libraries, no database, no internet.
 
 ## The big picture
 
-Claude Code already writes a log of every conversation. This app reads those logs and gives
-you a way back into them.
+Claude Code and Codex both write a log of every conversation. This app reads those logs and
+gives you a way back into them.
 
 ```mermaid
 flowchart LR
-    CC["Claude Code<br/>in your terminal"] -->|writes logs| L[("~/.claude/projects")]
+    CC["Claude Code"] -->|writes logs| L[("~/.claude/projects")]
+    CX["Codex"] -->|writes logs| L2[("~/.codex/sessions")]
     L -->|reads| APP["Claude Sessions<br/>menu bar app"]
+    L2 -->|reads| APP
     APP -->|"opens a terminal<br/>or jumps to one"| T["Your terminal"]
     T --> CC
+    T --> CX
 ```
 
 The app only ever **reads**. It never edits or deletes your session logs.
