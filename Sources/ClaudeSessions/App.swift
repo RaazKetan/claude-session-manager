@@ -175,6 +175,8 @@ struct SessionList: View {
     @State private var searchingInside = false
     @State private var updateAvailable: String?
     @State private var copiedUpgrade = false
+    @State private var pendingDelete: Session?
+    @State private var deleteFailed = false
     @AppStorage("agentFilterRaw") private var agentFilterRaw = ""
     private var agentFilter: Agent? {
         get { Agent(rawValue: agentFilterRaw) }
@@ -296,6 +298,12 @@ struct SessionList: View {
                         .buttonStyle(.plain)
                         .disabled(!s.exists)
                         .onHover { hovered = $0 ? s.id : (hovered == s.id ? nil : hovered) }
+                        .contextMenu {
+                            Button("Move to Trash…", role: .destructive) { pendingDelete = s }
+                            Button("Show in Finder") {
+                                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: s.id)])
+                            }
+                        }
                         .help(s.exists ? "Resume — switches to its window if it is already open"
                                        : "That folder no longer exists")
                     }
@@ -344,6 +352,30 @@ struct SessionList: View {
         }
         .padding(10)
         .frame(width: 340)
+        .confirmationDialog(
+            pendingDelete.map { "Move “\($0.label)” to the Trash?" } ?? "",
+            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                if let s = pendingDelete {
+                    if trashSession(s) { sessions = loadSessions() } else { deleteFailed = true }
+                }
+                pendingDelete = nil
+            }
+            Button("Cancel", role: .cancel) { pendingDelete = nil }
+        } message: {
+            if let s = pendingDelete {
+                Text(s.isRunning
+                     ? "This conversation is running right now. It goes to the Trash, so you can put it back."
+                     : "The transcript goes to the Trash, so you can put it back.")
+            }
+        }
+        .alert("Couldn't move it to the Trash", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The file may be open or protected. Nothing was changed.")
+        }
         .onAppear { sessions = loadSessions() }
         .task { updateAvailable = await Update.newerVersion() }
     }

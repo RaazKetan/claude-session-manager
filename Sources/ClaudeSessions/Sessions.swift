@@ -105,6 +105,29 @@ func decodeProjectFolder(_ encoded: String) -> String? {
     return pending.isEmpty ? path : nil
 }
 
+/// Moves a session's transcript to the Trash, along with any subagent logs it spawned.
+///
+// ponytail: trashItem, never unlink. These files are unrecoverable conversations, some of them
+//           hundreds of megabytes, and the Trash is the difference between a mistake and a loss.
+func trashSession(_ s: Session) -> Bool {
+    let fm = FileManager.default
+    let transcript = URL(fileURLWithPath: s.id)
+
+    // Claude Code keeps subagent transcripts in a folder named after the session, next to it.
+    var targets = [transcript]
+    let subagents = transcript.deletingLastPathComponent().appendingPathComponent(s.sessionID)
+    var isDir: ObjCBool = false
+    if fm.fileExists(atPath: subagents.path, isDirectory: &isDir), isDir.boolValue {
+        targets.append(subagents)
+    }
+
+    for target in targets {
+        guard (try? fm.trashItem(at: target, resultingItemURL: nil)) != nil else { return false }
+    }
+    Names.set("", for: s.sessionID)   // forget any custom name we were keeping for it
+    return true
+}
+
 /// Session ids whose transcript contains `text`, anywhere in the conversation.
 ///
 // ponytail: grep over the logs rather than an index. 364MB scans in well under a second, and an

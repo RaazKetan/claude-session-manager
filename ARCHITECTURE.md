@@ -18,7 +18,8 @@ flowchart LR
     T --> CX
 ```
 
-The app only ever **reads**. It never edits or deletes your session logs.
+The app **reads** your logs and never edits them. The one exception is deleting: right-click a
+row and it moves that transcript to the Trash, where you can put it back.
 
 ## Where everything lives
 
@@ -117,6 +118,20 @@ flowchart TD
     B --> D["No security warning,<br/>because nothing was downloaded"]
     C --> E["macOS flags downloads,<br/>so the install clears the flag"]
 ```
+
+## Deleting a session
+
+```mermaid
+flowchart LR
+    A["Right-click a row"] --> B["Confirm"]
+    B --> C["Transcript to Trash"]
+    C --> D["Subagent logs too"]
+    D --> E["Custom name forgotten"]
+```
+
+It goes to the Trash rather than being erased. These files are conversations you cannot
+regenerate, some of them hundreds of megabytes, and the Trash is the difference between a
+mistake and a loss.
 
 ## Update check
 
