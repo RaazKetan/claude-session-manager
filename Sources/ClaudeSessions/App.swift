@@ -128,6 +128,39 @@ func focusRunningSession(_ s: Session) -> Bool {
     return false
 }
 
+/// Asks before trashing, and reports failure.
+// ponytail: NSAlert, not SwiftUI's .confirmationDialog. The menu bar panel closes the moment a
+//           context-menu item is picked, which tears the view down before a SwiftUI dialog can
+//           present — so it silently did nothing. An alert outlives the panel.
+@MainActor
+func confirmAndTrash(_ s: Session) -> Bool {
+    NSApp.activate(ignoringOtherApps: true)   // an accessory app has to come forward to show it
+
+    let alert = NSAlert()
+    alert.alertStyle = .warning
+    // A label like "(no prompt)" identifies nothing, so always spell out which session it is.
+    alert.messageText = s.label == "(no prompt)"
+        ? "Move this \(s.agent.label) session to the Trash?"
+        : "Move “\(s.label)” to the Trash?"
+    alert.informativeText = [
+        "\(s.agent.label) · \(s.shortPath) · \(s.created.formatted(date: .abbreviated, time: .shortened))",
+        s.isRunning ? "It is running right now." : nil,
+        "The transcript goes to the Trash, so you can put it back.",
+    ].compactMap { $0 }.joined(separator: "\n")
+    alert.addButton(withTitle: "Move to Trash")
+    alert.addButton(withTitle: "Cancel")
+    guard alert.runModal() == .alertFirstButtonReturn else { return false }
+
+    if trashSession(s) { return true }
+
+    let failed = NSAlert()
+    failed.alertStyle = .warning
+    failed.messageText = "Couldn't move it to the Trash"
+    failed.informativeText = "The file may be open or protected. Nothing was changed."
+    failed.runModal()
+    return false
+}
+
 // MARK: - UI
 
 /// Menu bar mark, as a pixel grid — one row per line, `1` is a filled cell.
@@ -175,8 +208,6 @@ struct SessionList: View {
     @State private var searchingInside = false
     @State private var updateAvailable: String?
     @State private var copiedUpgrade = false
-    @State private var pendingDelete: Session?
-    @State private var deleteFailed = false
     @AppStorage("agentFilterRaw") private var agentFilterRaw = ""
     private var agentFilter: Agent? {
         get { Agent(rawValue: agentFilterRaw) }
@@ -299,7 +330,9 @@ struct SessionList: View {
                         .disabled(!s.exists)
                         .onHover { hovered = $0 ? s.id : (hovered == s.id ? nil : hovered) }
                         .contextMenu {
-                            Button("Move to Trash…", role: .destructive) { pendingDelete = s }
+                            Button("Move to Trash…", role: .destructive) {
+                                if confirmAndTrash(s) { sessions = loadSessions() }
+                            }
                             Button("Show in Finder") {
                                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: s.id)])
                             }
@@ -352,30 +385,6 @@ struct SessionList: View {
         }
         .padding(10)
         .frame(width: 340)
-        .confirmationDialog(
-            pendingDelete.map { "Move “\($0.label)” to the Trash?" } ?? "",
-            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Move to Trash", role: .destructive) {
-                if let s = pendingDelete {
-                    if trashSession(s) { sessions = loadSessions() } else { deleteFailed = true }
-                }
-                pendingDelete = nil
-            }
-            Button("Cancel", role: .cancel) { pendingDelete = nil }
-        } message: {
-            if let s = pendingDelete {
-                Text(s.isRunning
-                     ? "This conversation is running right now. It goes to the Trash, so you can put it back."
-                     : "The transcript goes to the Trash, so you can put it back.")
-            }
-        }
-        .alert("Couldn't move it to the Trash", isPresented: $deleteFailed) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("The file may be open or protected. Nothing was changed.")
-        }
         .onAppear { sessions = loadSessions() }
         .task { updateAvailable = await Update.newerVersion() }
     }

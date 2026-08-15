@@ -26,6 +26,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key><string>ClaudeSessions</string>
   <key>CFBundleIdentifier</key><string>dev.local.claudesessions</string>
   <key>CFBundleName</key><string>Claude Sessions</string>
+  <key>CFBundleIconFile</key><string>ClaudeSessions</string>
   <key>CFBundleShortVersionString</key><string>__VERSION__</string>
   <key>CFBundleVersion</key><string>__VERSION__</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
@@ -33,5 +34,11 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 sed -i '' "s/__VERSION__/$VERSION/g" "$APP/Contents/Info.plist"
+
+# Finder, alerts and Login Items all show this. Rendered from the same sprite as the menu bar.
+mkdir -p "$APP/Contents/Resources"
+ICONSET=$(mktemp -d)/ClaudeSessions.iconset
+swift tools/makeicon.swift "$ICONSET" >/dev/null
+iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/ClaudeSessions.icns"
 codesign --force --deep --sign - "$APP" 2>/dev/null || true
 echo "Built $APP — run: open $APP"
