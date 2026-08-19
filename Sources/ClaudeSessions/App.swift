@@ -393,7 +393,10 @@ struct SessionList: View {
                                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: s.id)])
                             }
                         }
-                        .help(s.exists ? "Resume — switches to its window if it is already open"
+                        .help(s.exists ? """
+                                         Resume — switches to its window if it is already open
+                                         Started \(s.created.formatted(date: .abbreviated, time: .shortened))
+                                         """
                                        : "That folder no longer exists")
                     }
                 }
@@ -461,7 +464,7 @@ struct ClaudeSessionsApp: App {
         }
         if CommandLine.arguments.contains("--list") {
             let s = loadSessions()
-            s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.agent.label)  \($0.sessionID)  \($0.isRunning ? "[running] " : "")\($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }
+            s.forEach { print("\($0.exists ? " " : "!")\($0.when)  \($0.cwd)  \($0.agent.label)  \($0.sessionID)  \($0.isRunning ? "[running] " : "")\($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }
             assert(s.allSatisfy { !$0.cwd.isEmpty && !$0.id.isEmpty }, "parsed session missing cwd/id")
             print("\(s.count) sessions")
             exit(0)

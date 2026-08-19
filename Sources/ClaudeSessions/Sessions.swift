@@ -46,16 +46,20 @@ struct Session: Identifiable {
         return cwd == home ? "~" : cwd.replacingOccurrences(of: home + "/", with: "~/")
     }
 
-    /// "3m ago" for today, "Yesterday", "Aug 9" beyond that.
+    /// When you were last in it — "3m ago" for today, "Yesterday", "Aug 9" beyond that.
+    ///
+    // ponytail: last activity, not creation date. The list is ordered by it, so labelling rows
+    //           with the day they were started put a session you worked on this morning at the
+    //           top of the list wearing a date from three weeks ago.
     var when: String {
-        let days = Calendar.current.dateComponents([.day], from: created, to: Date()).day ?? 0
+        let days = Calendar.current.dateComponents([.day], from: modified, to: Date()).day ?? 0
         if days == 0 {
             let f = RelativeDateTimeFormatter()
             f.unitsStyle = .abbreviated
-            return f.localizedString(for: created, relativeTo: Date())
+            return f.localizedString(for: modified, relativeTo: Date())
         }
         if days == 1 { return "Yesterday" }
-        return created.formatted(.dateTime.day().month(.abbreviated))
+        return modified.formatted(.dateTime.day().month(.abbreviated))
     }
 
     /// Running now, or touched within the hour — the sessions you are likely still in.
