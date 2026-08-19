@@ -3,7 +3,11 @@
 set -e
 
 # Stamp the release tag into the bundle so the app can tell when it is out of date.
-VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+# A packager can pass VERSION in. Homebrew builds from a tarball with no tags to describe, but it
+# unpacks into <name>-<version>/, so the directory still knows — without it the app ships as 0.0.0
+# and tells you forever that an update is out.
+VERSION=${VERSION:-$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')}
+VERSION=${VERSION:-$(basename "$PWD" | sed -n 's/^claude-session-manager-//p')}
 VERSION=${VERSION:-0.0.0}
 # --disable-sandbox: SwiftPM cannot nest its own sandbox inside Homebrew's build sandbox.
 # UNIVERSAL=1 builds arm64 + x86_64, for the prebuilt zip that Intel Macs download.
