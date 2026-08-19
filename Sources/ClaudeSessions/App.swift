@@ -309,6 +309,10 @@ struct SessionList: View {
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                // Nothing active means the filter has nothing to show; the newest rows are already
+                // at the top of the list, which is where you look once everything is closed.
+                .disabled(activeCount == 0 && !activeOnly)   // still clickable when it is how you got here
+                .opacity(activeCount == 0 ? 0.4 : 1)
                 .help("Only sessions running now or touched in the last hour")
             }
 
