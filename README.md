@@ -65,10 +65,23 @@ It also installs the [Spotify statusline](https://github.com/RaazKetan/claude-co
 
 ## Uninstall
 
+Remove the app the way you installed it:
+
 ```sh
-brew uninstall --cask claude-sessions   # or: brew uninstall claude-session-manager
-rm -rf ~/Library/"Application Support"/ClaudeSessions ~/Library/LaunchAgents/dev.local.claudesessions.plist
+brew uninstall --cask claude-sessions                  # the cask
+brew uninstall RaazKetan/tap/claude-session-manager    # built from source
+rm -rf /Applications/ClaudeSessions.app                # no Homebrew
 ```
+
+Then what it left around your machine:
+
+```sh
+rm -rf ~/Library/"Application Support"/ClaudeSessions   # names you gave sessions, update notice
+rm -f ~/Library/LaunchAgents/dev.local.claudesessions.plist   # start at login
+```
+
+It also adds two lines to `~/.zshrc` marked `# claude-sessions update notice` — delete those, and
+put back `~/.claude/settings.json.claude-sessions-backup` if you want your old statusline.
 
 ## How it works
 
