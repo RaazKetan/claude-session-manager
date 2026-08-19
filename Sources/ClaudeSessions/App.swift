@@ -29,28 +29,45 @@ func resume(_ s: Session, skipPermissions: Bool = false) {
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("resume-\(s.sessionID).command")
     try? script.write(to: url, atomically: true, encoding: .utf8)
     try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-    NSWorkspace.shared.open(url)
+
+    // ponytail: hand the script to a terminal by name rather than to whatever claims `.command`.
+    //           That association is not always a terminal — pointed at a coding agent, the script
+    //           is read as a prompt, and you get a new session named after the file instead of
+    //           the one you asked to resume.
+    let handler = NSWorkspace.shared.urlForApplication(toOpen: url)
+    let isTerminal = terminalBundleIDs.contains(handler.flatMap { Bundle(url: $0)?.bundleIdentifier } ?? "")
+    NSWorkspace.shared.open([url],
+                            withApplicationAt: isTerminal ? handler! : URL(fileURLWithPath: fallbackTerminal),
+                            configuration: NSWorkspace.OpenConfiguration())
 }
 
-/// tty of the running `claude` for this session, or nil if it isn't running — or if we
+private let fallbackTerminal = "/System/Applications/Utilities/Terminal.app"
+private let terminalBundleIDs: Set<String> = [
+    "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty", "net.kovidgoyal.kitty",
+    "com.github.wez.wezterm", "org.alacritty", "dev.warp.Warp-Stable", "co.zeit.hyper",
+]
+
+/// tty of the agent running this session, or nil if it isn't running — or if we
 /// can't tell which of several sessions in the folder is the one on screen.
 func runningSessionTTY(_ s: Session) -> String? {
-    // Exact: our own resume passes the id, so it is in the process arguments.
-    if let tty = agentTTY(s.agent, matching: "ps -o command= -p $pid | grep -q -- \(s.sessionID)") { return tty }
+    // Exact: the agent itself says which process is on this session.
+    if let pid = runningSessions()[s.sessionID] { return tty(ofPID: "\(pid)") }
 
     // A folder match only identifies the session when the folder holds exactly one.
     // Guessing between siblings would surface the wrong window.
     guard s.aloneInFolder else { return nil }
     let quoted = "'" + s.cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
-    return agentTTY(s.agent, matching: "[ \"$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')\" = \(quoted) ]")
+    return tty(ofPID: """
+        $(for pid in $(pgrep -x \(s.agent.binary)); do
+            if [ "$(lsof -a -p $pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')" = \(quoted) ]; then
+              echo $pid; break
+            fi
+          done)
+        """)
 }
 
-private func agentTTY(_ agent: Agent, matching test: String) -> String? {
-    let tty = sh("""
-        for pid in $(pgrep -x \(agent.binary)); do
-          if \(test); then ps -o tty= -p $pid | tr -d ' '; break; fi
-        done
-        """)
+private func tty(ofPID pid: String) -> String? {
+    let tty = sh("ps -o tty= -p \(pid) 2>/dev/null | tr -d ' '")
     guard let tty, !tty.isEmpty, tty != "??" else { return nil }
     return "/dev/" + tty
 }
@@ -204,11 +221,12 @@ struct SessionList: View {
     @State private var query = ""
     @AppStorage("skipPermissions") private var skipPermissions = false
     @State private var hovered: String?
-    @State private var insideMatches: Set<String> = []
+    @State private var insideMatches: [String: String] = [:]   // session id -> the passage that matched
     @State private var searchingInside = false
     @State private var updateAvailable: String?
     @State private var copiedUpgrade = false
     @AppStorage("agentFilterRaw") private var agentFilterRaw = ""
+    @AppStorage("activeOnly") private var activeOnly = false
     private var agentFilter: Agent? {
         get { Agent(rawValue: agentFilterRaw) }
         nonmutating set { agentFilterRaw = newValue?.rawValue ?? "" }
@@ -218,20 +236,19 @@ struct SessionList: View {
     var filtered: [Session] {
         sessions.filter { s in
             guard agentFilter == nil || s.agent == agentFilter else { return false }
+            guard !activeOnly || s.isActive else { return false }
             guard !query.isEmpty else { return true }
             return (s.cwd + " " + s.label).localizedCaseInsensitiveContains(query)
-                || insideMatches.contains(s.sessionID)
+                || insideMatches[s.sessionID] != nil
         }
     }
 
     func count(_ agent: Agent?) -> Int {
-        agent == nil ? sessions.count : sessions.filter { $0.agent == agent }.count
+        sessions.filter { (agent == nil || $0.agent == agent) && (!activeOnly || $0.isActive) }.count
     }
 
-    /// True when the row only turned up because of what's inside the conversation.
-    func matchedInside(_ s: Session) -> Bool {
-        insideMatches.contains(s.sessionID)
-            && !(s.cwd + " " + s.label).localizedCaseInsensitiveContains(query)
+    var activeCount: Int {
+        sessions.filter { $0.isActive && (agentFilter == nil || $0.agent == agentFilter) }.count
     }
 
     var body: some View {
@@ -240,12 +257,12 @@ struct SessionList: View {
                 .textFieldStyle(.roundedBorder)
                 // Debounced, and .task(id:) cancels the previous scan when the query changes.
                 .task(id: query) {
-                    guard query.count >= 2 else { insideMatches = []; return }
+                    guard query.count >= 2 else { insideMatches = [:]; return }
                     try? await Task.sleep(for: .milliseconds(250))
                     guard !Task.isCancelled else { return }
                     searchingInside = true
                     let text = query
-                    let hits = await Task.detached(priority: .userInitiated) {
+                    let hits: [String: String] = await Task.detached(priority: .userInitiated) {
                         sessionsContaining(text)
                     }.value
                     guard !Task.isCancelled else { return }
@@ -276,6 +293,23 @@ struct SessionList: View {
                     .opacity(count(agent) == 0 && agent != nil ? 0.4 : 1)
                 }
                 Spacer()
+                // The ones you are still in: running now, or written to within the hour.
+                Button { activeOnly.toggle() } label: {
+                    HStack(spacing: 4) {
+                        Circle().fill(.green).frame(width: 5, height: 5)
+                        Text("Active")
+                        Text("\(activeCount)")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 10))
+                    }
+                    .font(.system(size: 11, weight: activeOnly ? .semibold : .regular))
+                    .padding(.horizontal, 9).padding(.vertical, 4)
+                    .background(activeOnly ? AnyShapeStyle(.selection) : AnyShapeStyle(.quaternary),
+                                in: Capsule())
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Only sessions running now or touched in the last hour")
             }
 
             ScrollView {
@@ -310,15 +344,19 @@ struct SessionList: View {
                                             .padding(.horizontal, 5).padding(.vertical, 1)
                                             .background(.quaternary, in: Capsule())
                                     }
-                                    if matchedInside(s) {
-                                        Label("in conversation", systemImage: "text.magnifyingglass")
-                                            .labelStyle(.titleAndIcon)
-                                            .padding(.horizontal, 5).padding(.vertical, 1)
-                                            .background(.quaternary, in: Capsule())
-                                    }
                                 }
                                 .font(.system(size: 10.5))
                                 .foregroundStyle(.secondary)
+
+                                // What the search found inside the conversation, in its own words.
+                                if let passage = insideMatches[s.sessionID], !query.isEmpty {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "text.magnifyingglass")
+                                        Text(passage).lineLimit(1).truncationMode(.tail)
+                                    }
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.tertiary)
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 6).padding(.horizontal, 8)
@@ -394,6 +432,15 @@ struct SessionList: View {
 struct ClaudeSessionsApp: App {
     init() {
         // runnable check: `swift run ClaudeSessions --list`
+        // runnable check: `swift run ClaudeSessions --search <text>`
+        if let i = CommandLine.arguments.firstIndex(of: "--search"), i + 1 < CommandLine.arguments.count {
+            let hits = sessionsContaining(CommandLine.arguments[i + 1])
+            let rows = loadSessions().filter { hits[$0.sessionID] != nil }
+            rows.forEach { print("\($0.agent.label)  \($0.label.prefix(40))\n    \(hits[$0.sessionID] ?? "")") }
+            assert(rows.allSatisfy { !($0.label.isEmpty) }, "matched a session with no label")
+            print("\(rows.count) of \(hits.count) matches are sessions you can open")
+            exit(0)
+        }
         if CommandLine.arguments.contains("--list") {
             let s = loadSessions()
             s.forEach { print("\($0.exists ? " " : "!")\($0.created.formatted())  \($0.cwd)  \($0.agent.label)  \($0.sessionID)  \($0.isRunning ? "[running] " : "")\($0.name == nil ? "" : "[named] ")\($0.label.prefix(50))") }
@@ -401,8 +448,26 @@ struct ClaudeSessionsApp: App {
             print("\(s.count) sessions")
             exit(0)
         }
+        // runnable check: `swift run ClaudeSessions --update`
+        if CommandLine.arguments.contains("--update") {
+            assert(Update.isNewer("1.10.0", than: "1.9.0") && !Update.isNewer("1.9.0", than: "1.10.0"),
+                   "version compare is doing a string comparison")
+            assert(!Update.isNewer(Update.current, than: Update.current), "a version is newer than itself")
+            var latest: String?
+            let done = DispatchSemaphore(value: 0)   // init() is not async; the check still asks GitHub
+            // Detached: init() is main-actor bound, so an inherited Task would wait on the
+            // very thread the semaphore is holding.
+            Task.detached { latest = await Update.newerVersion(); done.signal() }
+            done.wait()
+            print("running \(Update.current), \(latest.map { "\($0) is out" } ?? "up to date")")
+            print("upgrade with: \(Update.upgradeCommand)")
+            print("shell notice: \(Update.noticeFile.path)")
+            exit(0)
+        }
         Statusline.installIfNeeded()
         enableLaunchAtLogin()
+        Update.installShellNotice()
+        Update.watch()
     }
 
     var body: some Scene {
