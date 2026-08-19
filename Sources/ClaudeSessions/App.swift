@@ -339,6 +339,12 @@ struct SessionList: View {
                                         .lineLimit(1).truncationMode(.head)
                                     Text("·")
                                     Text(s.when)
+                                    // Enough of the id to recognise it; the menu copies the whole thing.
+                                    Text(s.sessionID.prefix(8))
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundStyle(.tertiary)
+                                        .textSelection(.enabled)
+                                        .help(s.sessionID)
                                     if !s.exists {
                                         Text("folder missing")
                                             .padding(.horizontal, 5).padding(.vertical, 1)
@@ -370,6 +376,10 @@ struct SessionList: View {
                         .contextMenu {
                             Button("Move to Trash…", role: .destructive) {
                                 if confirmAndTrash(s) { sessions = loadSessions() }
+                            }
+                            Button("Copy session id") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(s.sessionID, forType: .string)
                             }
                             Button("Show in Finder") {
                                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: s.id)])
