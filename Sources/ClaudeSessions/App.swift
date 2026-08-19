@@ -321,6 +321,10 @@ struct SessionList: View {
                                     if s.isRunning {
                                         Circle().fill(.green).frame(width: 6, height: 6)
                                             .help("Running now")
+                                    } else if s.isActive {
+                                        // Nobody is on it this second, but you were, minutes ago.
+                                        Circle().strokeBorder(.green, lineWidth: 1).frame(width: 6, height: 6)
+                                            .help("Active in the last hour")
                                     }
                                     Text(s.label)
                                         .lineLimit(1)
