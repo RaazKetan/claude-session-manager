@@ -28,17 +28,12 @@ curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/ma
 
 ## Updating
 
-Whichever way you installed it:
+The app tells you when a release is out and copies the command that matches your install. By hand:
 
 ```sh
-brew upgrade --cask claude-sessions                      # the cask, above
-brew upgrade RaazKetan/tap/claude-session-manager        # built from source
-curl -fsSL https://raw.githubusercontent.com/RaazKetan/claude-session-manager/main/install.sh | zsh   # no Homebrew
+brew upgrade --cask claude-sessions                  # installed with the cask
+brew upgrade RaazKetan/tap/claude-session-manager    # built from source
 ```
-
-Versions before 1.9.2 offered the cask command to everybody, so if you built from source it answered
-`Error: Cask 'claude-sessions' is not installed`. Use the second line once, and the app gets it right
-from then on. A plain `brew upgrade` also picks it up.
 
 ## What it does
 
@@ -46,7 +41,7 @@ from then on. A plain `brew upgrade` also picks it up.
 - Click one to resume it. If it's already open, it jumps to that window instead of starting a second one.
 - Marks the sessions running right now.
 - Starts automatically when you log in.
-- Tells you when an update is out — in the menu bar panel, as a notification, and as a line new terminals print — and copies the right upgrade command for how you installed it.
+- Tells you when an update is out, in the panel and as a notification, and copies the upgrade command for you.
 - Optional checkbox to resume Claude sessions with `--dangerously-skip-permissions`, so they never stop to ask before running a tool. Off unless you turn it on.
 - Sessions whose folder you deleted are greyed out.
 - Right-click a session to move it to the Trash, or reveal the log file in Finder.
@@ -65,23 +60,13 @@ It also installs the [Spotify statusline](https://github.com/RaazKetan/claude-co
 
 ## Uninstall
 
-Remove the app the way you installed it:
-
 ```sh
-brew uninstall --cask claude-sessions                  # the cask
-brew uninstall RaazKetan/tap/claude-session-manager    # built from source
-rm -rf /Applications/ClaudeSessions.app                # no Homebrew
+brew uninstall --cask claude-sessions   # or: brew uninstall RaazKetan/tap/claude-session-manager
+rm -rf ~/Library/"Application Support"/ClaudeSessions ~/Library/LaunchAgents/dev.local.claudesessions.plist
 ```
 
-Then what it left around your machine:
-
-```sh
-rm -rf ~/Library/"Application Support"/ClaudeSessions   # names you gave sessions, update notice
-rm -f ~/Library/LaunchAgents/dev.local.claudesessions.plist   # start at login
-```
-
-It also adds two lines to `~/.zshrc` marked `# claude-sessions update notice` — delete those, and
-put back `~/.claude/settings.json.claude-sessions-backup` if you want your old statusline.
+It also leaves two lines in `~/.zshrc` marked `# claude-sessions update notice`, and a copy of your
+old statusline setting at `~/.claude/settings.json.claude-sessions-backup`.
 
 ## How it works
 
@@ -90,11 +75,11 @@ put back `~/.claude/settings.json.claude-sessions-backup` if you want your old s
 ## Building it yourself
 
 ```sh
-./build.sh                                  # makes ClaudeSessions.app
-swift run ClaudeSessions --list              # prints what it can read, no window
-swift run ClaudeSessions --search "some text"   # what searching inside conversations finds
-swift run ClaudeSessions --update               # version check and the upgrade command for this copy
+./build.sh                        # makes ClaudeSessions.app
+swift run ClaudeSessions --list   # prints what it can read, no window
 ```
+
+`--search "some text"` and `--update` are the other two, for checking the search and the version check.
 
 ## License
 
